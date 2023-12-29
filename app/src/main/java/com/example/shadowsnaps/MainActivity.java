@@ -6,6 +6,7 @@ import static com.example.shadowsnaps.FBref.refUsers;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     public void getLastImageScanned(View view)
     {
+        final ProgressDialog pd;
         final long MAX_BYTES = 4096 * 4096;
         ArrayList<TextTranslate> resList = new ArrayList<>();
 
@@ -103,9 +105,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         //get the id of the selected user
         String id = spinnerList.get(spinner.getSelectedItemPosition());
 
+        pd = ProgressDialog.show(this, "Downloading image", "Downloading...", true);
+
         refUsers.child(id).child("translate").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                //getting date of last image scan
                 String lastImageDate = "";
 
                 for(DataSnapshot data : snapshot.getChildren())
@@ -119,10 +125,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 String path = "scan_images/" + id + "/image_" + lastImageDate + ".jpg";
                 StorageReference storageReference = FBST.getReference().child(path);
 
+
                 storageReference.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
                     @Override
                     public void onSuccess(byte[] bytes)
                     {
+                        //succeeded downloading image
+
+                        pd.dismiss();
+
                         //convert byte to bitmap
                         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         iv.setImageBitmap(bitmap);
@@ -134,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     @Override
                     public void onFailure(@NonNull Exception e)
                     {
+                        //failed downloading image
+                        pd.dismiss();
                         Toast.makeText(MainActivity.this, "Failed due to: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });

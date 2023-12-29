@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "1095807863451",
+    "firebase_url": "https://translator-e6f64-default-rtdb.firebaseio.com",
+    "project_id": "translator-e6f64",
+    "storage_bucket": "translator-e6f64.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1095807863451:android:ef00c36a91555d09b2943e",
+        "android_client_info": {
+          "package_name": "com.example.shadowsnaps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuDgjOlnkJ2wXoN9QS6pYwqdmTYMsw3SM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1095807863451:android:4f4da06e028ccb2eb2943e",
+        "android_client_info": {
+          "package_name": "com.example.translator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuDgjOlnkJ2wXoN9QS6pYwqdmTYMsw3SM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     //vars
     ArrayList<String> spinnerList;
+    ArrayList<String> idList;
     ArrayAdapter<String> adapter;
 
 
@@ -54,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //init vars
         spinnerList = new ArrayList<>();
+        idList = new ArrayList<>();
         spinnerList.add("Select User");
         adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, spinnerList);
 
@@ -74,7 +76,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for(DataSnapshot data : snapshot.getChildren())
                 {
-                    spinnerList.add(data.getKey());
+                    Users user = data.getValue(Users.class);
+                    spinnerList.add(user.getName());
+                    idList.add(user.getUserId());
                 }
             }
 
@@ -103,53 +107,63 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
         //get the id of the selected user
-        String id = spinnerList.get(spinner.getSelectedItemPosition());
+        String id = idList.get(spinner.getSelectedItemPosition() - 1); //minus one because of the "Select user"
 
         pd = ProgressDialog.show(this, "Downloading image", "Downloading...", true);
+
 
         refUsers.child(id).child("translate").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                //getting date of last image scan
-                String lastImageDate = "";
-
-                for(DataSnapshot data : snapshot.getChildren())
+                if(snapshot.exists())
                 {
-                    resList.add(data.getValue(TextTranslate.class));
+
+                    //getting date of last image scan
+                    String lastImageDate = "";
+
+                    for(DataSnapshot data : snapshot.getChildren())
+                    {
+                        resList.add(data.getValue(TextTranslate.class));
+                    }
+
+                    lastImageDate = resList.get(resList.size() - 1).getDate(); //get the date of the  last image int the array
+
+                    //download image from user
+                    String path = "scan_images/" + id + "/image_" + lastImageDate + ".jpg";
+                    StorageReference storageReference = FBST.getReference().child(path);
+
+
+                    storageReference.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                        @Override
+                        public void onSuccess(byte[] bytes)
+                        {
+                            //succeeded downloading image
+
+                            pd.dismiss();
+
+                            //convert byte to bitmap
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                            iv.setImageBitmap(bitmap);
+
+                            Toast.makeText(MainActivity.this, "downloaded image successfully", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e)
+                        {
+                            //failed downloading image
+                            pd.dismiss();
+                            Toast.makeText(MainActivity.this, "Failed due to: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
-
-                lastImageDate = resList.get(resList.size() - 1).getDate(); //get the date of the  last image int the array
-
-                //download image from user
-                String path = "scan_images/" + id + "/image_" + lastImageDate + ".jpg";
-                StorageReference storageReference = FBST.getReference().child(path);
-
-
-                storageReference.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
-                    @Override
-                    public void onSuccess(byte[] bytes)
-                    {
-                        //succeeded downloading image
-
-                        pd.dismiss();
-
-                        //convert byte to bitmap
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        iv.setImageBitmap(bitmap);
-
-                        Toast.makeText(MainActivity.this, "downloaded image successfully", Toast.LENGTH_SHORT).show();
-                    }
-
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e)
-                    {
-                        //failed downloading image
-                        pd.dismiss();
-                        Toast.makeText(MainActivity.this, "Failed due to: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                else
+                {
+                    pd.dismiss();
+                    Toast.makeText(MainActivity.this, "No image scanned yet", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override

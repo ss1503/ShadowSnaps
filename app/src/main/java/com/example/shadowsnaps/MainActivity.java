@@ -10,6 +10,7 @@ import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,6 +19,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,9 +27,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.ListResult;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
@@ -41,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     ArrayList<String> idList;
     ArrayAdapter<String> adapter;
 
+    private static final long MAX_BYTES = 4096 * 4096;
 
 
     @Override
@@ -102,7 +107,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void getLastImageScanned(View view)
     {
         final ProgressDialog pd;
-        final long MAX_BYTES = 4096 * 4096;
         ArrayList<TextTranslate> resList = new ArrayList<>();
 
 
@@ -133,13 +137,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     String path = "scan_images/" + id + "/image_" + lastImageDate + ".jpg";
                     StorageReference storageReference = FBST.getReference().child(path);
 
-
                     storageReference.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
                         @Override
                         public void onSuccess(byte[] bytes)
                         {
                             //succeeded downloading image
-
                             pd.dismiss();
 
                             //convert byte to bitmap
@@ -168,10 +170,131 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-
             }
         });
 
 
     }
+
+    public void capture(View view)
+    {
+        //find the right user for capturing
+        final ProgressDialog pd;
+        refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot)
+            {
+                Users user = null;
+                for(DataSnapshot data : snapshot.getChildren())
+                {
+                    user = data.getValue(Users.class);
+                    if(user.getName().equals(spinner.getSelectedItem().toString())) //getting the right users info
+                        break;
+                }
+
+                if (user != null)
+                {
+                    user.setToCapture(1);
+                    refUsers.child(user.getUserId()).setValue(user);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+
+        //check if the flas has been rested
+        pd = ProgressDialog.show(this, "Downloading image", "Downloading...", true);
+        refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot)
+            {
+                Users user = null;
+                for(DataSnapshot data : snapshot.getChildren())
+                {
+                    user = data.getValue(Users.class);
+                    if(user.getName().equals(spinner.getSelectedItem().toString()))
+                        break;
+                }
+
+                if(user != null)
+                {
+                    //TODO::download the image from storage
+                    ArrayList<StorageReference> images = new ArrayList<>();
+
+                    String id = idList.get(spinner.getSelectedItemPosition() - 1);
+                    String pathToDirectory = "secret_images/" + id + "/";
+                    StorageReference storageReference = FBST.getReference().child(pathToDirectory);
+
+
+                    try {
+                        Thread.sleep(7500);//wait till the image is dull uploaded
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    storageReference.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                        @Override
+                        public void onSuccess(ListResult listResult)
+                        {
+                            //images.addAll(listResult.getItems()); //getting all the images into the ArrayList
+                            for(StorageReference item: listResult.getItems())
+                            {
+                                images.add(item);
+                            }
+
+                            if(!images.isEmpty())
+                            {
+                                StorageReference lastImage = images.get(images.size() - 1);
+
+                                lastImage.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                                    @Override
+                                    public void onSuccess(byte[] bytes)
+                                    {
+                                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                        iv.setImageBitmap(bitmap);
+
+                                        pd.dismiss();
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        pd.dismiss();
+                                        Log.e("Error downloading", "Couldnt download image");
+                                    }
+                                });
+                            }
+
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e)
+                        {
+                            Log.e("Error getting all images", Objects.requireNonNull(e.getMessage()));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

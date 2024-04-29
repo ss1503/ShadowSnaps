@@ -27,6 +27,7 @@
         android:layout_marginEnd="16dp"
         android:backgroundTint="@color/black"
         android:text="Capture"
+        android:onClick="capture"
         app:layout_constraintBottom_toTopOf="@+id/resultIv"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"

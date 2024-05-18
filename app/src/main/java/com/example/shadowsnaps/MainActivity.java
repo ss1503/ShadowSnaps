@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     //components vars
     Spinner spinner;
-    TextView selectedUserTv;
+    TextView resultText;
     ImageView iv;
 
     //vars
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //init components
         spinner = (Spinner) findViewById(R.id.usersSp);
-        selectedUserTv = (TextView) findViewById(R.id.uesrSelectedTv);
+        resultText = (TextView) findViewById(R.id.result_text);
         iv = (ImageView) findViewById(R.id.resultIv);
 
         //init vars
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        selectedUserTv.setText("Selected: " +  spinnerList.get(position));
+        //selectedUserTv.setText("Selected: " +  spinnerList.get(position));
     }
 
     @Override
@@ -147,6 +147,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                             //convert byte to bitmap
                             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                             iv.setImageBitmap(bitmap);
+                            iv.setRotation(90f);
+                            resultText.setText("");
 
                             Toast.makeText(MainActivity.this, "downloaded image successfully", Toast.LENGTH_SHORT).show();
                         }
@@ -252,6 +254,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                     {
                                         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                                         iv.setImageBitmap(bitmap);
+                                        iv.setRotation(-90f);
+                                        resultText.setText("");
 
                                         pd.dismiss();
                                     }

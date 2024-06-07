@@ -230,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
                     try {
-                        Thread.sleep(7500);//wait till the image is dull uploaded
+                        Thread.sleep(10000);//wait till the image is dull uploaded
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

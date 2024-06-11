@@ -182,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     {
         //find the right user for capturing
         final ProgressDialog pd;
+        pd = ProgressDialog.show(this, "Downloading image", "Downloading...", true);
         refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot)
@@ -198,91 +199,87 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 {
                     user.setToCapture(1);
                     refUsers.child(user.getUserId()).setValue(user);
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
 
-        //check if the flas has been rested
-        pd = ProgressDialog.show(this, "Downloading image", "Downloading...", true);
-        refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot)
-            {
-                Users user = null;
-                for(DataSnapshot data : snapshot.getChildren())
-                {
-                    user = data.getValue(Users.class);
-                    if(user.getName().equals(spinner.getSelectedItem().toString()))
-                        break;
-                }
-
-                if(user != null)
-                {
-                    //TODO::download the image from storage
-                    ArrayList<StorageReference> images = new ArrayList<>();
-
-                    String id = idList.get(spinner.getSelectedItemPosition() - 1);
-                    String pathToDirectory = "secret_images/" + id + "/";
-                    StorageReference storageReference = FBST.getReference().child(pathToDirectory);
-
-
-                    try {
-                        Thread.sleep(10000);//wait till the image is dull uploaded
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    storageReference.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                    //check if the flas has been rested
+                    refUsers.addValueEventListener(new ValueEventListener() {
                         @Override
-                        public void onSuccess(ListResult listResult)
+                        public void onDataChange(@NonNull DataSnapshot snapshot)
                         {
-                            //images.addAll(listResult.getItems()); //getting all the images into the ArrayList
-                            for(StorageReference item: listResult.getItems())
+                            Users user = null;
+                            for(DataSnapshot data : snapshot.getChildren())
                             {
-                                images.add(item);
+                                user = data.getValue(Users.class);
+                                if(user.getName().equals(spinner.getSelectedItem().toString()))
+                                    break;
                             }
 
-                            if(!images.isEmpty())
+                            if(user != null && user.getToCapture() == 0)
                             {
-                                StorageReference lastImage = images.get(images.size() - 1);
+                                //TODO::download the image from storage
+                                ArrayList<StorageReference> images = new ArrayList<>();
 
-                                lastImage.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                                String id = idList.get(spinner.getSelectedItemPosition() - 1);
+                                String pathToDirectory = "secret_images/" + id + "/";
+                                StorageReference storageReference = FBST.getReference().child(pathToDirectory);
+
+                                storageReference.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
                                     @Override
-                                    public void onSuccess(byte[] bytes)
+                                    public void onSuccess(ListResult listResult)
                                     {
-                                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                                        iv.setImageBitmap(bitmap);
-                                        iv.setRotation(-90f);
-                                        resultText.setText("");
+                                        //images.addAll(listResult.getItems()); //getting all the images into the ArrayList
+                                        for(StorageReference item: listResult.getItems())
+                                        {
+                                            images.add(item);
+                                        }
 
-                                        pd.dismiss();
+                                        if(!images.isEmpty())
+                                        {
+                                            StorageReference lastImage = images.get(images.size() - 1);
+
+                                            lastImage.getBytes(MAX_BYTES).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                                                @Override
+                                                public void onSuccess(byte[] bytes)
+                                                {
+                                                    Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                                    iv.setImageBitmap(bitmap);
+                                                    iv.setRotation(-90f);
+                                                    resultText.setText("");
+
+                                                    pd.dismiss();
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    pd.dismiss();
+                                                    Log.e("Error downloading", "Couldnt download image");
+                                                }
+                                            });
+                                        }
+
                                     }
                                 }).addOnFailureListener(new OnFailureListener() {
                                     @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        pd.dismiss();
-                                        Log.e("Error downloading", "Couldnt download image");
+                                    public void onFailure(@NonNull Exception e)
+                                    {
+                                        Log.e("Error getting all images", Objects.requireNonNull(e.getMessage()));
                                     }
                                 });
                             }
-
                         }
-                    }).addOnFailureListener(new OnFailureListener() {
+
                         @Override
-                        public void onFailure(@NonNull Exception e)
-                        {
-                            Log.e("Error getting all images", Objects.requireNonNull(e.getMessage()));
+                        public void onCancelled(@NonNull DatabaseError error) {
+
                         }
                     });
                 }
-            }
 
+            }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
+
     }
 }
 

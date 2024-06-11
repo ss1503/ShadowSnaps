@@ -76,7 +76,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private void getUsers()
     {
-        refUsers.addValueEventListener(new ValueEventListener() {
+        final ProgressDialog pd;
+        pd = ProgressDialog.show(this, "Getting users", "Downloading...", true);
+        refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for(DataSnapshot data : snapshot.getChildren())
@@ -84,12 +86,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     Users user = data.getValue(Users.class);
                     spinnerList.add(user.getName());
                     idList.add(user.getUserId());
+                    pd.dismiss();
                 }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
+            public void onCancelled(@NonNull DatabaseError error)
+            {
+                pd.dismiss();
             }
         });
     }
@@ -268,15 +272,18 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         }
 
                         @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-
+                        public void onCancelled(@NonNull DatabaseError error)
+                        {
+                            pd.dismiss();
                         }
                     });
                 }
 
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError error)
+            {
+                pd.dismiss();
             }
         });
 
